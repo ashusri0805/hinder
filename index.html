@@ -1,1 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Hinder - Designed to Keep You Single</title>
+  <meta name="theme-color" content="#121216">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="Hinder: The world's premier anti-dating app designed to dodge bullets and preserve your peace of mind.">
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: pan-y;
+      background: #0d0e12;
+    }
+
+    .tinder-card-container {
+      perspective: 1000px;
+    }
+
+    .card-swipe-item {
+      will-change: transform, opacity;
+      transition: box-shadow 0.2s ease;
+      touch-action: none;
+    }
+
+    .card-swipe-item.moving {
+      transition: none;
+    }
+
+    .stamp {
+      position: absolute;
+      top: 28px;
+      font-weight: 800;
+      font-size: 1.6rem;
+      text-transform: uppercase;
+      padding: 6px 14px;
+      border-radius: 10px;
+      border: 3.5px solid;
+      pointer-events: none;
+      opacity: 0;
+      transform: scale(0.85);
+      transition: opacity 0.15s ease, transform 0.15s ease;
+      z-index: 40;
+      letter-spacing: 1px;
+    }
+
+    .stamp-nope {
+      right: 24px;
+      color: #22c55e;
+      border-color: #22c55e;
+      transform: rotate(14deg);
+    }
+
+    .stamp-like {
+      left: 24px;
+      color: #ef4444;
+      border-color: #ef4444;
+      transform: rotate(-14deg);
+    }
+
+    /* Soft glowing gradients */
+    .glow-pass {
+      box-shadow: 0 0 30px -5px rgba(34, 197, 94, 0.45);
+    }
+    
+    .glow-danger {
+      box-shadow: 0 0 30px -5px rgba(239, 68, 68, 0.45);
+    }
+
+    /* Custom scrollbar for drawer */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #2e303b;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="text-slate-100 flex justify-center items-center min-h-screen overflow-hidden antialiased">
+
+  <div class="relative w-full max-w-md h-[100dvh] flex flex-col justify-between bg-gradient-to-b from-[#181920] to-[#0d0e12] shadow-2xl border-x border-slate-800/60 overflow-hidden">
+    
+    <!-- Header Bar -->
+    <header class="px-5 pt-4 pb-2 flex items-center justify-between border-b border-slate-800/50 backdrop-blur-md z-30">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-600 to-amber-500 flex items-center justify-center shadow-lg shadow-rose-900/40 text-lg">
+          🛑
+        </div>
+        <div>
+          <h1 class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-rose-400 via-pink-400 to-amber-300 bg-clip-text text-transparent">
+            Hinder
+          </h1>
+          <p class="text-[10px] font-medium text-slate-400 uppercase tracking-wider -mt-1">Designed to Be Unmatched</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="addProfileBtn" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 active:scale-95 text-slate-300 border border-slate-700/60 transition" title="Add a custom red flag profile">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+        </button>
+        <button id="statsToggleBtn" class="p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 active:scale-95 text-slate-300 border border-slate-700/60 transition" title="View Safety Record">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="relative flex-1 w-full p-4 flex flex-col justify-center items-center tinder-card-container overflow-hidden">
+      <div id="cardStack" class="relative w-full h-full max-h-[580px] flex items-center justify-center">
+        <!-- Cards will be populated by JavaScript -->
+      </div>
+
+      <!-- Empty state when cards run out -->
+      <div id="emptyState" class="hidden flex-col items-center justify-center text-center p-6 space-y-4">
+        <div class="text-6xl animate-bounce">🛡️</div>
+        <h3 class="text-2xl font-extrabold text-white">Safe & Sound!</h3>
+        <p class="text-sm text-slate-400 max-w-xs">You dodged every catastrophe in your area. Your peace of mind and bank balance remain safe.</p>
+        <button id="reloadDeckBtn" class="px-6 py-3 bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 font-bold rounded-2xl shadow-lg shadow-rose-900/30 active:scale-95 transition">
+          Reshuffle Hazards
+        </button>
+      </div>
+    </main>
+
+    <footer class="px-6 pb-6 pt-2 flex items-center justify-around z-30">
+      <!-- Rewind / Reset -->
+      <button id="rewindBtn" class="w-12 h-12 rounded-full bg-slate-800/90 text-amber-400 border border-slate-700 flex items-center justify-center text-xl shadow-lg hover:bg-slate-700 active:scale-90 transition" title="Rewind">
+        ↺
+      </button>
+
+      <!-- Dodge Bullet (Pass / Left) -->
+      <div class="flex flex-col items-center">
+        <button id="passBtn" class="w-16 h-16 rounded-full bg-emerald-500/10 text-emerald-400 border-2 border-emerald-500/40 flex items-center justify-center text-2xl shadow-xl hover:bg-emerald-500/20 active:scale-90 transition glow-pass" title="Dodge Bullet (Swipe Left)">
+          🛡️
+        </button>
+        <span class="text-[10px] uppercase font-bold text-emerald-400 tracking-wider mt-1">Dodge</span>
+      </div>
+
+      <!-- Catastrophe / Match (Swipe Right) -->
+      <div class="flex flex-col items-center">
+        <button id="likeBtn" class="w-16 h-16 rounded-full bg-rose-500/10 text-rose-400 border-2 border-rose-500/40 flex items-center justify-center text-2xl shadow-xl hover:bg-rose-500/20 active:scale-90 transition glow-danger" title="Court Disaster (Swipe Right)">
+          💥
+        </button>
+        <span class="text-[10px] uppercase font-bold text-rose-400 tracking-wider mt-1">Danger</span>
+      </div>
+
+      <!-- Emergency Siren / Sound test -->
+      <button id="sirenBtn" class="w-12 h-12 rounded-full bg-slate-800/90 text-rose-400 border border-slate-700 flex items-center justify-center text-xl shadow-lg hover:bg-slate-700 active:scale-90 transition" title="Alarm">
+        🚨
+      </button>
+    </footer>
+
+    <!-- Alert / Intervention Modal -->
+    <div id="interventionModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden items-center justify-center p-5 transition-opacity">
+      <div class="bg-[#1c1d25] border-2 border-rose-500/80 rounded-3xl p-6 max-w-sm w-full text-center shadow-2xl relative animate-scale">
+        <div class="w-16 h-16 rounded-2xl bg-rose-500/20 text-rose-400 border border-rose-500/40 mx-auto flex items-center justify-center text-3xl mb-4">
+          ⚠️
+        </div>
+        <h3 id="modalTitle" class="text-xl font-extrabold text-rose-400 mb-2">Intervention Triggered!</h3>
+        <p id="modalDesc" class="text-sm text-slate-300 leading-relaxed mb-6">
+          Our automated sanity filters detected that you tried to swipe right. For your own safety, this match has been confiscated.
+        </p>
+        <div class="bg-slate-900/80 rounded-2xl p-3 border border-slate-800 mb-6 text-left text-xs space-y-1.5 text-slate-400">
+          <div class="flex justify-between"><span class="text-slate-500">Reason:</span> <span id="modalReason" class="font-semibold text-rose-300">Severe delusion</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Therapy cost avoided:</span> <span class="font-semibold text-emerald-400">$3,400</span></div>
+          <div class="flex justify-between"><span class="text-slate-500">Status:</span> <span class="font-semibold text-sky-400">Safely Unmatched</span></div>
+        </div>
+        <button id="closeModalBtn" class="w-full py-3.5 bg-gradient-to-r from-rose-500 to-pink-600 hover:from-rose-600 hover:to-pink-700 font-bold text-white rounded-2xl shadow-lg active:scale-95 transition">
+          Thank Goodness, Close
+        </button>
+      </div>
+    </div>
+
+    <div id="createDrawer" class="fixed inset-x-0 bottom-0 bg-[#16171f] border-t border-slate-700/80 rounded-t-3xl z-50 p-6 max-w-md mx-auto transform translate-y-full transition-transform duration-300 ease-out max-h-[90vh] overflow-y-auto">
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-5"></div>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <span>🚩</span> Add A New Red Flag
+        </h2>
+        <button id="closeDrawerBtn" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+      
+      <form id="customProfileForm" class="space-y-3.5 text-xs">
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Name & Age</label>
+          <input type="text" id="custName" required placeholder="e.g. Kyle, 29" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2.5 text-white placeholder-slate-600 focus:outline-none focus:border-rose-500 text-sm">
+        </div>
+        
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Emoji Avatar</label>
+            <input type="text" id="custAvatar" required maxlength="4" value="🦹" class="w-full text-center text-xl bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-1.5 text-white focus:outline-none focus:border-rose-500">
+          </div>
+          <div>
+            <label class="block text-slate-400 font-semibold mb-1">Red Flag Level (%)</label>
+            <input type="number" id="custDanger" min="50" max="100" value="95" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-rose-500">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Chief Red Flag</label>
+          <input type="text" id="custFlag" required placeholder="e.g. 'Has 8 podcasts, zero listeners'" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-rose-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Deadly Dealbreaker</label>
+          <input type="text" id="custDealbreaker" required placeholder="e.g. Asks to split your half of the bill" class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-rose-500">
+        </div>
+
+        <div>
+          <label class="block text-slate-400 font-semibold mb-1">Unhinged Bio</label>
+          <textarea id="custBio" rows="2" required placeholder="Their justification for why everyone else is the problem..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-600 focus:outline-none focus:border-rose-500"></textarea>
+        </div>
+
+        <button type="submit" class="w-full py-3 bg-gradient-to-r from-rose-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 text-white font-bold rounded-xl shadow-lg mt-2 transition">
+          Inject Into Stack
+        </button>
+      </form>
+    </div>
+
+    <div id="statsDrawer" class="fixed inset-x-0 bottom-0 bg-[#16171f] border-t border-slate-700/80 rounded-t-3xl z-50 p-6 max-w-md mx-auto transform translate-y-full transition-transform duration-300 ease-out">
+      <div class="w-12 h-1.5 bg-slate-700 rounded-full mx-auto mb-5"></div>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <span>🛡️</span> Your Singlehood Record
+        </h2>
+        <button id="closeStatsBtn" class="text-slate-400 hover:text-white text-lg">✕</button>
+      </div>
+
+      <div class="grid grid-cols-2 gap-3 mb-5 text-center">
+        <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+          <div id="dodgedCount" class="text-3xl font-extrabold text-emerald-400">0</div>
+          <div class="text-[11px] text-slate-400 uppercase font-semibold mt-1">Bullets Dodged</div>
+        </div>
+        <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+          <div id="interventionsCount" class="text-3xl font-extrabold text-rose-400">0</div>
+          <div class="text-[11px] text-slate-400 uppercase font-semibold mt-1">Traps Intercepted</div>
+        </div>
+      </div>
+      <p class="text-xs text-slate-400 text-center leading-relaxed">
+        By refusing terrible dates, you have preserved an estimated <strong>140 hours</strong> of agonizing dinner small-talk and <strong>$820</strong> in cocktails.
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    class SoundSynth {
+      constructor() {
+        this.ctx = null;
+      }
+      init() {
+        if (!this.ctx) {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (AudioContext) {
+            this.ctx = new AudioContext();
+          }
+        }
+      }
+      playPass() {
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, now);
+        osc.frequency.exponentialRampToValueAtTime(700, now + 0.18);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.18);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.18);
+      }
+      playDanger() {
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.exponentialRampToValueAtTime(110, now + 0.25);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      }
+      playSiren() {
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        for (let i = 0; i < 2; i++) {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'square';
+          osc.frequency.setValueAtTime(550, now + i * 0.2);
+          osc.frequency.setValueAtTime(880, now + i * 0.2 + 0.1);
+          gain.gain.setValueAtTime(0.15, now + i * 0.2);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + i * 0.2 + 0.19);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now + i * 0.2);
+          osc.stop(now + i * 0.2 + 0.2);
+        }
+      }
+    }
+
+    const sound = new SoundSynth();
+
+    const initialProfiles = [
+      {
+        id: 1,
+        name: "Brayden",
+        age: 27,
+        avatar: "🧢",
+        color: "from-blue-600 to-indigo-950",
+        flagBadge: "Crypto Disciple",
+        dangerMeter: 94,
+        dealbreaker: "Will explain Solana over dinner while making you pay",
+        bio: "Serial entrepreneur (dropshipping beard oil). Looking for a 10/10 queen who won't ask why I live in my mother's basement.",
+        stat: "Last shower: Prior to Bitcoin halving",
+        trapReason: "High risk of 3-hour financial pitch disguised as a date."
+      },
+      {
+        id: 2,
+        name: "Chloe",
+        age: 25,
+        avatar: "💅",
+        color: "from-fuchsia-600 to-rose-950",
+        flagBadge: "Aspiring Lifestyle Mogul",
+        dangerMeter: 98,
+        dealbreaker: "Requires signed release form before eating warm meals",
+        bio: "Just looking for someone with aesthetic posture to hold my ring light in public. I do not reply to texts under 5 paragraphs.",
+        stat: "Daily screen time: 18 hours 42 mins",
+        trapReason: "You will spend all your evenings holding a reflector at brunch."
+      },
+      {
+        id: 3,
+        name: "Trevor",
+        age: 31,
+        avatar: "🎸",
+        color: "from-amber-600 to-yellow-950",
+        flagBadge: "Campfire Guitarist",
+        dangerMeter: 89,
+        dealbreaker: "Forces unwanted acoustic covers of 'Wonderwall'",
+        bio: "My ex said I have commitment issues, but honestly that's just because her aura was retrograde. Currently sleeping on my drummer's sofa.",
+        stat: "Active bands: 4 (none have gigs)",
+        trapReason: "Will ask to borrow $20 for guitar strings immediately."
+      },
+      {
+        id: 4,
+        name: "Madison",
+        age: 26,
+        avatar: "☕",
+        color: "from-emerald-600 to-teal-950",
+        flagBadge: "Aggressive Yelper",
+        dangerMeter: 92,
+        dealbreaker: "Has requested to speak with 300+ restaurant managers",
+        bio: "If you can't handle me screaming at barista staff for minor oat milk discrepancies, you simply don't understand high standards.",
+        stat: "Reviews written: 1,420 (average: 1.2 stars)",
+        trapReason: "Severe risk of being ejected from Applebee's within 12 minutes."
+      },
+      {
+        id: 5,
+        name: "Casper",
+        age: 28,
+        avatar: "👻",
+        color: "from-cyan-600 to-slate-900",
+        flagBadge: "Professional Ghoster",
+        dangerMeter: 99,
+        dealbreaker: "Vanishes mid-conversation and returns 8 months later",
+        bio: "Amazing conversation for exactly 48 hours. Then I dissolve into mist without a trace. Text me 'hey stranger' next spring.",
+        stat: "Unread texts: 1,931",
+        trapReason: "Preemptive ghosting alert: already gone."
+      }
+    ];
+
+    let deck = [...initialProfiles];
+    let history = [];
+    let bulletsDodged = 0;
+    let trapsBlocked = 0;
+
+    const cardStackEl = document.getElementById('cardStack');
+    const emptyStateEl = document.getElementById('emptyState');
+    const interventionModal = document.getElementById('interventionModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalReason = document.getElementById('modalReason');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    
+    const createDrawer = document.getElementById('createDrawer');
+    const addProfileBtn = document.getElementById('addProfileBtn');
+    const closeDrawerBtn = document.getElementById('closeDrawerBtn');
+    const customProfileForm = document.getElementById('customProfileForm');
+
+    const statsDrawer = document.getElementById('statsDrawer');
+    const statsToggleBtn = document.getElementById('statsToggleBtn');
+    const closeStatsBtn = document.getElementById('closeStatsBtn');
+    const dodgedCountEl = document.getElementById('dodgedCount');
+    const interventionsCountEl = document.getElementById('interventionsCount');
+
+    const passBtn = document.getElementById('passBtn');
+    const likeBtn = document.getElementById('likeBtn');
+    const rewindBtn = document.getElementById('rewindBtn');
+    const sirenBtn = document.getElementById('sirenBtn');
+    const reloadDeckBtn = document.getElementById('reloadDeckBtn');
+
+    function renderStack() {
+      cardStackEl.innerHTML = '';
+      if (deck.length === 0) {
+        emptyStateEl.classList.remove('hidden');
+        emptyStateEl.classList.add('flex');
+        return;
+      }
+      emptyStateEl.classList.add('hidden');
+      emptyStateEl.classList.remove('flex');
+
+      // Render top 3 cards for depth effect
+      const visibleCards = deck.slice(0, 3).reverse();
+
+      visibleCards.forEach((profile, index) => {
+        const actualIndex = visibleCards.length - 1 - index; // 0 is top
+        const card = document.createElement('div');
+        card.className = `card-swipe-item absolute w-full h-full rounded-3xl bg-[#1e2029] border border-slate-700/80 shadow-2xl overflow-hidden flex flex-col justify-between select-none`;
+        card.dataset.id = profile.id;
+
+        // Visual stack offset
+        const scale = 1 - actualIndex * 0.04;
+        const translateY = actualIndex * 12;
+        card.style.transform = `translateY(${translateY}px) scale(${scale})`;
+        card.style.zIndex = 30 - actualIndex;
+
+        card.innerHTML = `
+          <!-- Stamp overlays -->
+          <div class="stamp stamp-nope">DODGED</div>
+          <div class="stamp stamp-like">DANGER!</div>
+
+          <!-- Top visual representation -->
+          <div class="relative w-full h-[54%] bg-gradient-to-br ${profile.color} flex flex-col items-center justify-center p-4 overflow-hidden">
+            <div class="absolute -top-10 -right-10 w-44 h-44 bg-white/10 rounded-full blur-2xl pointer-events-none"></div>
+            
+            <!-- Floating red flag chip -->
+            <div class="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full border border-rose-500/50 flex items-center gap-1.5 shadow-lg">
+              <span class="text-xs">🚩</span>
+              <span class="text-[11px] font-bold text-rose-300 uppercase tracking-wide">${profile.flagBadge}</span>
+            </div>
+
+            <div class="text-8xl filter drop-shadow-2xl transform hover:scale-105 transition-transform duration-200">
+              ${profile.avatar}
+            </div>
+
+            <!-- Danger meter -->
+            <div class="absolute bottom-3 inset-x-4 bg-black/60 backdrop-blur-md rounded-2xl p-2.5 border border-slate-700/70 flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-rose-400">Hazard Index</span>
+              <div class="w-32 bg-slate-800 rounded-full h-2.5 overflow-hidden border border-slate-700">
+                <div class="bg-gradient-to-r from-amber-400 to-rose-500 h-full rounded-full" style="width: ${profile.dangerMeter}%"></div>
+              </div>
+              <span class="text-xs font-black text-rose-300">${profile.dangerMeter}%</span>
+            </div>
+          </div>
+
+          <!-- Profile details & Bio -->
+          <div class="p-5 flex-1 flex flex-col justify-between bg-[#191a22]">
+            <div>
+              <div class="flex items-baseline justify-between mb-1">
+                <h2 class="text-2xl font-black tracking-tight text-white flex items-center gap-1.5">
+                  ${profile.name} <span class="text-slate-400 font-semibold text-lg">${profile.age}</span>
+                </h2>
+                <span class="text-[10px] uppercase font-bold text-slate-500 bg-slate-800/80 px-2 py-0.5 rounded-md border border-slate-700">Avoidable</span>
+              </div>
+
+              <!-- Dealbreaker callout -->
+              <div class="text-xs text-rose-400 font-bold flex items-center gap-1 mb-2">
+                <span>⛔</span> <span>${profile.dealbreaker}</span>
+              </div>
+
+              <p class="text-xs text-slate-300 leading-relaxed font-normal line-clamp-3">
+                "${profile.bio}"
+              </p>
+            </div>
+
+            <!-- Funny micro stat -->
+            <div class="pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
+              <span class="truncate">📊 ${profile.stat}</span>
+            </div>
+          </div>
+        `;
+
+        if (actualIndex === 0) {
+          attachTouchListeners(card);
+        }
+
+        cardStackEl.appendChild(card);
+      });
+    }
+
+    function attachTouchListeners(card) {
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let currentX = 0;
+      let currentY = 0;
+
+      const nopeStamp = card.querySelector('.stamp-nope');
+      const likeStamp = card.querySelector('.stamp-like');
+
+      const onStart = (e) => {
+        isDragging = true;
+        card.classList.add('moving');
+        const point = e.touches ? e.touches[0] : e;
+        startX = point.clientX;
+        startY = point.clientY;
+      };
+
+      const onMove = (e) => {
+        if (!isDragging) return;
+        const point = e.touches ? e.touches[0] : e;
+        currentX = point.clientX - startX;
+        currentY = point.clientY - startY;
+
+        const rotate = currentX * 0.08;
+        card.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${rotate}deg)`;
+
+        // Handle stamp visibilities
+        if (currentX < -30) {
+          const opacity = Math.min(Math.abs(currentX) / 120, 1);
+          nopeStamp.style.opacity = opacity;
+          nopeStamp.style.transform = `rotate(14deg) scale(${0.85 + opacity * 0.15})`;
+          likeStamp.style.opacity = 0;
+        } else if (currentX > 30) {
+          const opacity = Math.min(currentX / 120, 1);
+          likeStamp.style.opacity = opacity;
+          likeStamp.style.transform = `rotate(-14deg) scale(${0.85 + opacity * 0.15})`;
+          nopeStamp.style.opacity = 0;
+        } else {
+          nopeStamp.style.opacity = 0;
+          likeStamp.style.opacity = 0;
+        }
+      };
+
+      const onEnd = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        card.classList.remove('moving');
+
+        const threshold = 110;
+        if (currentX < -threshold) {
+          swipeCard('left');
+        } else if (currentX > threshold) {
+          swipeCard('right');
+        } else {
+          // Snap back
+          card.style.transform = '';
+          nopeStamp.style.opacity = 0;
+          likeStamp.style.opacity = 0;
+        }
+        currentX = 0;
+        currentY = 0;
+      };
+
+      card.addEventListener('mousedown', onStart);
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+
+      card.addEventListener('touchstart', onStart, { passive: true });
+      card.addEventListener('touchmove', onMove, { passive: true });
+      card.addEventListener('touchend', onEnd);
+    }
+
+    function swipeCard(direction) {
+      if (deck.length === 0) return;
+      const topCard = cardStackEl.lastElementChild;
+      if (!topCard) return;
+
+      const profile = deck[0];
+
+      if (direction === 'left') {
+        // Dodged the bullet
+        sound.playPass();
+        bulletsDodged++;
+        dodgedCountEl.textContent = bulletsDodged;
+
+        topCard.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+        topCard.style.transform = 'translate(-200%, 30px) rotate(-35deg)';
+        topCard.style.opacity = '0';
+
+        setTimeout(() => {
+          history.push(deck.shift());
+          renderStack();
+        }, 320);
+
+      } else if (direction === 'right') {
+        // Disaster attempted! Show comedic intervention
+        sound.playDanger();
+        trapsBlocked++;
+        interventionsCountEl.textContent = trapsBlocked;
+
+        topCard.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+        topCard.style.transform = 'translate(200%, 30px) rotate(35deg)';
+        topCard.style.opacity = '0';
+
+        setTimeout(() => {
+          modalTitle.textContent = `Dangerous Match Confiscated!`;
+          modalDesc.textContent = `You attempted to swipe right on ${profile.name}. Hinder algorithms intervened to protect you from inevitable chaos.`;
+          modalReason.textContent = profile.trapReason || "Extreme red flag hazard";
+          interventionModal.classList.remove('hidden');
+          interventionModal.classList.add('flex');
+
+          history.push(deck.shift());
+          renderStack();
+        }, 320);
+      }
+    }
+
+    passBtn.addEventListener('click', () => swipeCard('left'));
+    likeBtn.addEventListener('click', () => swipeCard('right'));
+
+    rewindBtn.addEventListener('click', () => {
+      if (history.length > 0) {
+        sound.playPass();
+        deck.unshift(history.pop());
+        renderStack();
+      }
+    });
+
+    sirenBtn.addEventListener('click', () => {
+      sound.playSiren();
+    });
+
+    reloadDeckBtn.addEventListener('click', () => {
+      deck = [...initialProfiles];
+      history = [];
+      renderStack();
+    });
+
+    closeModalBtn.addEventListener('click', () => {
+      interventionModal.classList.add('hidden');
+      interventionModal.classList.remove('flex');
+    });
+
+    // Custom Profile Drawer logic
+    addProfileBtn.addEventListener('click', () => {
+      createDrawer.classList.remove('translate-y-full');
+    });
+    closeDrawerBtn.addEventListener('click', () => {
+      createDrawer.classList.add('translate-y-full');
+    });
+
+    customProfileForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const rawName = document.getElementById('custName').value.split(',');
+      const newProfile = {
+        id: Date.now(),
+        name: rawName[0].trim(),
+        age: rawName[1] ? rawName[1].trim() : '29',
+        avatar: document.getElementById('custAvatar').value || '🦹',
+        color: 'from-purple-600 to-rose-950',
+        flagBadge: document.getElementById('custFlag').value,
+        dangerMeter: parseInt(document.getElementById('custDanger').value) || 96,
+        dealbreaker: document.getElementById('custDealbreaker').value,
+        bio: document.getElementById('custBio').value,
+        stat: "Custom created hazard",
+        trapReason: "You literally invented this red flag yourself."
+      };
+
+      deck.unshift(newProfile);
+      createDrawer.classList.add('translate-y-full');
+      customProfileForm.reset();
+      renderStack();
+      sound.playPass();
+    });
+
+    // Stats Drawer
+    statsToggleBtn.addEventListener('click', () => {
+      statsDrawer.classList.remove('translate-y-full');
+    });
+    closeStatsBtn.addEventListener('click', () => {
+      statsDrawer.classList.add('translate-y-full');
+    });
+
+    window.addEventListener('load', () => {
+      renderStack();
+    });
+  </script>
+</body>
+</html>
